@@ -20,7 +20,7 @@ import streamlit as st
 st.set_page_config(page_title="App para Profe xd", layout="wide")
 # Menú lateral
 st.sidebar.title("Menú Principal")
-opcion = st.sidebar.radio("Ir a:", ["🏠 Inicio", "Graficador (temp)", "📊 Visualizador 2D", "📚 Acerca de"])
+opcion = st.sidebar.radio("Ir a:", ["🏠 Inicio", "Graficador (temp)", "Metodo de Euler", "📊 Visualizador 2D", "📚 Acerca de"])
 
 # Mostrar contenido según la selección
 if opcion == "🏠 Inicio":
@@ -68,6 +68,48 @@ elif opcion == "Graficador (temp)":
 
         except Exception as e:
             st.error(f"Error al procesar la expresión: {e}")
+
+elif opcion == "Metodo de Euler":
+    st.title("🧪 Comparación entre solución exacta y método de Euler")
+
+    # st.markdown("""
+    # Esta herramienta permite resolver la ecuación diferencial:
+
+    # \[
+    # \\frac{dx}{dt} = -a \\cdot x
+    # \]
+
+    # y comparar la solución exacta con la aproximación numérica usando el **método de Euler**.
+    # """)
+
+    # Parámetros ajustables
+    a = st.slider("🔧 Parámetro a", min_value=0.1, max_value=10.0, value=3.0, step=0.1)
+    dt = st.slider("⏱️ Paso de tiempo (dt)", min_value=0.01, max_value=1.0, value=0.1, step=0.01)
+    t_end = st.slider("📏 Tiempo final", min_value=1.0, max_value=10.0, value=5.0, step=0.5)
+
+    # Cálculo
+    N = int(t_end / dt)
+    t = np.linspace(0, t_end, N)
+    x_exact = np.exp(-a * t)
+
+    # Método de Euler
+    x_euler = np.zeros_like(t)
+    x_euler[0] = 1
+    for i in range(1, len(t)):
+        x_euler[i] = x_euler[i-1] + (-a * x_euler[i-1]) * dt
+
+    # Gráfica
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(t, x_exact, label="Solución exacta", color="green")
+    ax.plot(t, x_euler, label="Método de Euler", linestyle="--", color="blue")
+    ax.fill_between(t, x_exact, x_euler, color="orange", alpha=0.3, label="Error acumulado")
+    ax.set_title(f"Comparación con a = {a}, dt = {dt}")
+    ax.set_xlabel("t")
+    ax.set_ylabel("x(t)")
+    ax.legend()
+    ax.grid(True)
+
+    st.pyplot(fig)
     
 elif opcion == "📊 Visualizador 2D":
 
