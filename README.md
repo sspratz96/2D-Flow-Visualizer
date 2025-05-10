@@ -1,5 +1,12 @@
 # Streamlit App for Dynamic Systems
 
+A multi-tool web app built using **Streamlit** to visualize and simulate various mathematical and physical models interactively — perfect for educational or exploratory purposes.
+
+## 🚀 Live App
+
+You can try the app directly here:  
+👉 [2D Flow Visualizer on Streamlit Cloud](https://2d-flow-visualizer-txcchjtk6ymgpgkkaxaxcd.streamlit.app/)
+
 ## Main App Overview
 This Streamlit app is a dynamic system visualization tool that allows the user to interact with different mathematical models and visualize their behavior. The main sections are:
 
