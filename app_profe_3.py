@@ -13,6 +13,7 @@ from pathlib import Path
 import tempfile
 from PIL import Image
 import sympy as sp
+import os
 import emoji
 
 import streamlit as st
@@ -20,7 +21,7 @@ import streamlit as st
 st.set_page_config(page_title="App para Profe xd", layout="wide")
 # Menú lateral
 st.sidebar.title("Menú Principal")
-opcion = st.sidebar.radio("Ir a:", ["🏠 Inicio", "Graficador (temp)", "Metodo de Euler", "📊 Visualizador 2D", "📚 Acerca de"])
+opcion = st.sidebar.radio("Ir a:", ["🏠 Inicio", "Graficador (temp)", "Metodo de Euler", "🧭 Osciladores Acoplados", "📊 Visualizador 2D", "📚 Acerca de"])
 
 # Mostrar contenido según la selección
 if opcion == "🏠 Inicio":
@@ -110,6 +111,105 @@ elif opcion == "Metodo de Euler":
     ax.grid(True)
 
     st.pyplot(fig)
+
+elif opcion == "🧭 Osciladores Acoplados":
+    st.title("🧭 Modelo de Osciladores Acoplados (Kuramoto) con Kᵢ")
+    st.markdown(r"""
+    ### 🧮 Ecuaciones del Modelo
+
+    Este simulador implementa el **modelo de Kuramoto** para \( N \) osciladores acoplados con constantes de acoplamiento individuales \( K_i \).  
+    Cada oscilador sigue la dinámica:
+
+    $$
+    \frac{d\theta_i}{dt} = \omega_i + \frac{K_i}{N} \sum_{j=1}^N \sin(\theta_j - \theta_i)
+    $$
+
+    donde:
+
+    - \( \theta_i(t) \) es la fase del oscilador \( i \)
+    - \( \omega_i \) es su frecuencia natural
+    - \( K_i \) es la constante de acoplamiento que modula la influencia de los demás osciladores sobre el oscilador \( i \). Por 'simplicidad' se asumirá
+                que todos los osciladores j distintos de i influencian con la misma constante de acoplamiento K, y no es unica por oscilador.
+    - \( N \) es el número total de osciladores
+
+    Se resuelve numéricamente mediante el **método de Euler** con paso de integración \( dt \).
+    """)
+
+    with st.sidebar:
+        st.header("⚙️ Parámetros")
+        N = st.slider("Número de osciladores", 2, 5, 3)
+        T = st.slider("Tiempo total de simulación", 5, 60, 20)
+        dt = st.slider("Paso temporal (dt)", 0.01, 0.2, 0.05, step=0.01)
+
+        st.markdown("---")
+        st.markdown("#### Frecuencias Naturales (ωᵢ)")
+        omega = []
+        for i in range(N):
+            omega.append(st.number_input(f"ω{i+1}", value=float(i), key=f"omega_{i}"))
+
+        st.markdown("#### Ángulos Iniciales (θ₀ᵢ)")
+        theta0 = []
+        for i in range(N):
+            theta0.append(st.slider(f"θ₀{i+1} [rad]", 0.0, 2*np.pi, float(i) * 2*np.pi / N, step=0.1, key=f"theta0_{i}"))
+
+        st.markdown("#### Constantes de Acoplamiento (Kᵢ)")
+        K_list = []
+        for i in range(N):
+            K_list.append(st.number_input(f"K{i+1}", value=1.0, min_value=0.0, step=0.1, key=f"K_{i}"))
+
+    if st.button("▶️ Generar Simulación"):
+        # Simular y obtener θ(t)
+        steps = int(T / dt)
+        t = np.linspace(0, T, steps)
+        theta = np.zeros((steps, N))
+        theta[0, :] = theta0
+
+        for k in range(1, steps):
+            dtheta = np.zeros(N)
+            for i in range(N):
+                coupling = np.sum(np.sin(theta[k-1, :] - theta[k-1, i]))
+                dtheta[i] = omega[i] + (K_list[i] / N) * coupling
+            theta[k, :] = theta[k-1, :] + dtheta * dt
+
+        # Mostrar gráfico de fases
+        st.markdown("### 📈 Evolución de las fases")
+        fig1, ax1 = plt.subplots(figsize=(8, 4))
+        for i in range(N):
+            ax1.plot(t, np.mod(theta[:, i], 2*np.pi), label=f"θ{i+1}")
+        ax1.set_xlabel("Tiempo")
+        ax1.set_ylabel("Fase (mod 2π)")
+        ax1.set_title("Evolución de fases acopladas")
+        ax1.legend()
+        ax1.grid(True)
+        st.pyplot(fig1)
+
+        # Generar animación con spinner
+        with st.spinner("🎞️ Generando animación..."):
+            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".gif")
+            filename = tmp_file.name
+            tmp_file.close()
+
+            fig, ax = plt.subplots(figsize=(5, 5))
+            ax.set_xlim(-1.2, 1.2)
+            ax.set_ylim(-1.2, 1.2)
+            ax.set_title("Osciladores Acoplados")
+            points, = ax.plot([], [], 'o', markersize=10)
+
+            def update(frame):
+                angles = theta[frame, :]
+                x = np.cos(angles)
+                y = np.sin(angles)
+                points.set_data(x, y)
+                return points,
+
+            ani = FuncAnimation(fig, update, frames=steps, blit=True, interval=30)
+            ani.save(filename, writer='pillow')
+            plt.close(fig)
+
+            with open(filename, "rb") as f:
+                gif_bytes = f.read()
+            st.image(gif_bytes, caption="🔄 Evolución de los osciladores", use_column_width=True)
+            os.remove(filename)
     
 elif opcion == "📊 Visualizador 2D":
 
