@@ -4,5 +4,4 @@ matplotlib
 sympy
 emoji
 pathlib
-tempfile
 PIL
